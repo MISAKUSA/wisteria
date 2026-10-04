@@ -7,9 +7,11 @@ const {
   Collection,
   Events,
   GatewayIntentBits,
+  PermissionFlagsBits,
   REST,
   Routes,
   MessageFlags,
+  SlashCommandBuilder,
 } = require('discord.js');
 const database = require('./database');
 
@@ -22,6 +24,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 const commands = new Collection();
+const rest = new REST({ version: '10' }).setToken(token);
 const commandDirectory = path.join(__dirname, 'commands');
 
 for (const fileName of fs.readdirSync(commandDirectory).filter((name) => name.endsWith('.js'))) {
@@ -29,14 +32,37 @@ for (const fileName of fs.readdirSync(commandDirectory).filter((name) => name.en
   commands.set(command.data.name, command);
 }
 
-client.once(Events.ClientReady, async (readyClient) => {
-  const rest = new REST({ version: '10' }).setToken(token);
-  const route = guildId
-    ? Routes.applicationGuildCommands(clientId, guildId)
-    : Routes.applicationCommands(clientId);
+const builtInCommandData = [...commands.values()].map((command) => command.data.toJSON());
 
+async function syncGuildCommands(targetGuildId) {
+  const guildCommands = database.listCustomCommands(targetGuildId).map((command) => new SlashCommandBuilder()
+    .setName(command.name)
+    .setDescription('Custom server response command.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .toJSON());
+  const includeBuiltIns = guildId === targetGuildId;
+  return rest.put(Routes.applicationGuildCommands(clientId, targetGuildId), {
+    body: [...(includeBuiltIns ? builtInCommandData : []), ...guildCommands],
+  });
+}
+
+client.once(Events.ClientReady, async (readyClient) => {
   try {
-    await rest.put(route, { body: [...commands.values()].map((command) => command.data.toJSON()) });
+    if (guildId) {
+      await syncGuildCommands(guildId);
+    } else {
+      await rest.put(Routes.applicationCommands(clientId), { body: builtInCommandData });
+    }
+
+    for (const customGuildId of database.listCustomCommandGuildIds()) {
+      if (customGuildId === guildId) continue;
+      try {
+        await syncGuildCommands(customGuildId);
+      } catch (error) {
+        console.error(`Could not sync custom commands for server ${customGuildId}:`, error);
+      }
+    }
+
     console.log(`Logged in as ${readyClient.user.tag}; synced ${commands.size} commands.`);
   } catch (error) {
     console.error('Could not register slash commands:', error);
@@ -49,10 +75,28 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   const command = commands.get(interaction.commandName);
-  if (!command) return;
+  if (!command) {
+    const customCommand = interaction.guildId
+      ? database.getCustomCommand(interaction.guildId, interaction.commandName)
+      : undefined;
+    if (!customCommand) return;
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+      return interaction.reply({
+        content: 'You need the Manage Server permission to use this command.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+    return interaction.reply({
+      content: customCommand.response,
+      allowedMentions: { parse: [] },
+    });
+  }
 
   try {
-    await command.execute(interaction, database);
+    await command.execute(interaction, database, {
+      builtInCommandNames: new Set(commands.keys()),
+      syncGuildCommands,
+    });
   } catch (error) {
     console.error(`Command /${interaction.commandName} failed:`, error);
     const response = {

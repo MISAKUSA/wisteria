@@ -6,7 +6,7 @@ const memoryOnly = databasePath === ':memory:';
 if (!memoryOnly) fs.mkdirSync(path.dirname(path.resolve(databasePath)), { recursive: true });
 
 function emptyState() {
-  return { stickyMessages: {}, autoReactions: {}, notes: [], nextNoteId: 1 };
+  return { stickyMessages: {}, autoReactions: {}, customCommands: [], notes: [], nextNoteId: 1 };
 }
 
 function loadState() {
@@ -21,6 +21,7 @@ function loadState() {
   return {
     stickyMessages: savedState.stickyMessages || {},
     autoReactions,
+    customCommands: savedState.customCommands || [],
     notes: savedState.notes || [],
     nextNoteId: savedState.nextNoteId || 1,
   };
@@ -83,6 +84,37 @@ module.exports = {
     delete state.autoReactions[channelId];
     saveState();
     return true;
+  },
+  getCustomCommand(guildId, name) {
+    return state.customCommands.find((command) => command.guild_id === guildId && command.name === name);
+  },
+  listCustomCommands(guildId) {
+    return state.customCommands
+      .filter((command) => command.guild_id === guildId)
+      .sort((first, second) => first.name.localeCompare(second.name));
+  },
+  listCustomCommandGuildIds() {
+    return [...new Set(state.customCommands.map((command) => command.guild_id))];
+  },
+  setCustomCommand(guildId, name, response, createdBy) {
+    const existing = this.getCustomCommand(guildId, name);
+    const command = { guild_id: guildId, name, response, created_by: createdBy };
+    if (existing) {
+      Object.assign(existing, command);
+    } else {
+      state.customCommands.push(command);
+    }
+    saveState();
+    return Boolean(existing);
+  },
+  removeCustomCommand(guildId, name) {
+    const commandIndex = state.customCommands.findIndex(
+      (command) => command.guild_id === guildId && command.name === name,
+    );
+    if (commandIndex === -1) return undefined;
+    const [removedCommand] = state.customCommands.splice(commandIndex, 1);
+    saveState();
+    return removedCommand;
   },
   addNote(guildId, userId, authorId, note) {
     const id = state.nextNoteId;

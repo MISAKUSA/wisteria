@@ -31,6 +31,22 @@ test('automatic reactions can be added and removed per channel', () => {
   assert.equal(database.getAutoReaction('channel-1'), undefined);
 });
 
+test('custom commands are saved, updated, listed, and scoped to a server', () => {
+  assert.equal(database.setCustomCommand('guild-1', 'rules', 'Read the rules.', 'moderator-1'), false);
+  assert.deepEqual(database.getCustomCommand('guild-1', 'rules'), {
+    guild_id: 'guild-1',
+    name: 'rules',
+    response: 'Read the rules.',
+    created_by: 'moderator-1',
+  });
+  assert.equal(database.setCustomCommand('guild-1', 'rules', 'Updated rules.', 'moderator-2'), true);
+  assert.equal(database.getCustomCommand('guild-1', 'rules').response, 'Updated rules.');
+  assert.equal(database.getCustomCommand('guild-2', 'rules'), undefined);
+  assert.deepEqual(database.listCustomCommandGuildIds(), ['guild-1']);
+  assert.equal(database.removeCustomCommand('guild-1', 'rules').response, 'Updated rules.');
+  assert.deepEqual(database.listCustomCommandGuildIds(), []);
+});
+
 test('older single-emoji auto-reaction settings still load', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wisteria-legacy-'));
   const databasePath = path.join(directory, 'bot.json');

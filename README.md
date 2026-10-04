@@ -26,11 +26,14 @@ The bot registers its slash commands when it starts. Set `DISCORD_GUILD_ID` whil
 - `/autoreact remove emoji [channel]` removes one emoji.
 - `/autoreact view [channel]` shows the configured emojis.
 - `/autoreact clear [channel]` turns automatic reactions off.
+- `/customcommand create name text` creates or updates a custom slash command, such as `/rules`.
+- `/customcommand list` shows this server’s custom commands.
+- `/customcommand delete name` deletes a custom command.
 - `/usernote add user note` adds a private staff note about a member.
 - `/usernote list user` displays that member's notes privately.
 - `/usernote remove note_id` deletes a note.
 
-All bot commands require the **Manage Server** permission. User-note replies are ephemeral, and notes are scoped to their server. The bot needs **Add Reactions** permission in channels where automatic reactions are configured.
+All bot commands require the **Manage Server** permission. Custom commands are specific to each server; their replies are visible to everyone and do not trigger mentions. User-note replies are ephemeral, and notes are scoped to their server. The bot needs **Add Reactions** permission in channels where automatic reactions are configured.
 
 ## Add a command
 
