@@ -1,4 +1,4 @@
-# Dweeball Discord Bot
+# Wisteria Discord Bot
 
 A small, modular Discord bot with persistent sticky messages and staff-only user notes.
 
@@ -21,11 +21,14 @@ The bot registers its slash commands when it starts. Set `DISCORD_GUILD_ID` whil
 - `/sticky set message [channel]` saves and posts a sticky message. When a member sends a message in that channel, the bot moves its sticky to the bottom.
 - `/sticky view [channel]` shows the configured sticky to you.
 - `/sticky remove [channel]` removes the sticky.
+- `/autoreact set emoji [channel]` adds that emoji to each new member message in the channel.
+- `/autoreact view [channel]` shows the configured emoji.
+- `/autoreact clear [channel]` turns automatic reactions off.
 - `/usernote add user note` adds a private staff note about a member.
 - `/usernote list user` displays that member's notes privately.
 - `/usernote remove note_id` deletes a note.
 
-Sticky commands and user notes require the **Manage Server** permission. User-note replies are ephemeral, and notes are scoped to their server.
+All bot commands require the **Manage Server** permission. User-note replies are ephemeral, and notes are scoped to their server. The bot needs **Add Reactions** permission in channels where automatic reactions are configured.
 
 ## Add a command
 

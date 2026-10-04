@@ -18,6 +18,16 @@ test('sticky settings can be created, updated, and removed', () => {
   assert.equal(database.getSticky('channel-1'), undefined);
 });
 
+test('automatic reactions can be set and cleared per channel', () => {
+  database.setAutoReaction('channel-1', '✅', 'moderator-1');
+  assert.equal(database.getAutoReaction('channel-1').emoji, '✅');
+  assert.equal(database.getAutoReaction('channel-2'), undefined);
+
+  assert.equal(database.removeAutoReaction('channel-1'), true);
+  assert.equal(database.removeAutoReaction('channel-1'), false);
+  assert.equal(database.getAutoReaction('channel-1'), undefined);
+});
+
 test('user notes stay scoped to their server and can be removed', () => {
   const noteId = database.addNote('guild-1', 'user-1', 'moderator-1', 'Follow up next week.');
 
@@ -29,7 +39,7 @@ test('user notes stay scoped to their server and can be removed', () => {
 });
 
 test('file-backed data survives reopening the database', () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'dweeball-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wisteria-'));
   const databasePath = path.join(directory, 'bot.json');
   const modulePath = require.resolve('../src/database');
 

@@ -6,7 +6,7 @@ const memoryOnly = databasePath === ':memory:';
 if (!memoryOnly) fs.mkdirSync(path.dirname(path.resolve(databasePath)), { recursive: true });
 
 function emptyState() {
-  return { stickyMessages: {}, notes: [], nextNoteId: 1 };
+  return { stickyMessages: {}, autoReactions: {}, notes: [], nextNoteId: 1 };
 }
 
 function loadState() {
@@ -14,6 +14,7 @@ function loadState() {
   const savedState = JSON.parse(fs.readFileSync(databasePath, 'utf8'));
   return {
     stickyMessages: savedState.stickyMessages || {},
+    autoReactions: savedState.autoReactions || {},
     notes: savedState.notes || [],
     nextNoteId: savedState.nextNoteId || 1,
   };
@@ -44,6 +45,19 @@ module.exports = {
   removeSticky(channelId) {
     if (!state.stickyMessages[channelId]) return false;
     delete state.stickyMessages[channelId];
+    saveState();
+    return true;
+  },
+  getAutoReaction(channelId) {
+    return state.autoReactions[channelId];
+  },
+  setAutoReaction(channelId, emoji, updatedBy) {
+    state.autoReactions[channelId] = { channel_id: channelId, emoji, updated_by: updatedBy };
+    saveState();
+  },
+  removeAutoReaction(channelId) {
+    if (!state.autoReactions[channelId]) return false;
+    delete state.autoReactions[channelId];
     saveState();
     return true;
   },

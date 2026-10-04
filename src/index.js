@@ -84,7 +84,16 @@ async function refreshSticky(channel) {
 }
 
 client.on(Events.MessageCreate, (message) => {
-  if (!message.guild || message.author.bot || !database.getSticky(message.channelId)) return;
+  if (!message.guild || message.author.bot) return;
+
+  const autoReaction = database.getAutoReaction(message.channelId);
+  if (autoReaction) {
+    message.react(autoReaction.emoji).catch((error) => {
+      console.error(`Could not react to message in channel ${message.channelId}:`, error);
+    });
+  }
+
+  if (!database.getSticky(message.channelId)) return;
 
   const channelId = message.channelId;
   const previousRefresh = refreshesByChannel.get(channelId) || Promise.resolve();
