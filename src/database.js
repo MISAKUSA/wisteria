@@ -12,9 +12,15 @@ function emptyState() {
 function loadState() {
   if (memoryOnly || !fs.existsSync(databasePath)) return emptyState();
   const savedState = JSON.parse(fs.readFileSync(databasePath, 'utf8'));
+  const autoReactions = Object.fromEntries(
+    Object.entries(savedState.autoReactions || {}).map(([channelId, setting]) => [
+      channelId,
+      { ...setting, emojis: setting.emojis || (setting.emoji ? [setting.emoji] : []) },
+    ]),
+  );
   return {
     stickyMessages: savedState.stickyMessages || {},
-    autoReactions: savedState.autoReactions || {},
+    autoReactions,
     notes: savedState.notes || [],
     nextNoteId: savedState.nextNoteId || 1,
   };
@@ -51,12 +57,29 @@ module.exports = {
   getAutoReaction(channelId) {
     return state.autoReactions[channelId];
   },
-  setAutoReaction(channelId, emoji, updatedBy) {
-    state.autoReactions[channelId] = { channel_id: channelId, emoji, updated_by: updatedBy };
+  setAutoReactions(channelId, emojis, updatedBy) {
+    state.autoReactions[channelId] = { channel_id: channelId, emojis, updated_by: updatedBy };
     saveState();
   },
-  removeAutoReaction(channelId) {
-    if (!state.autoReactions[channelId]) return false;
+  removeAutoReaction(channelId, emoji) {
+    const setting = state.autoReactions[channelId];
+    if (!setting) return false;
+
+    if (emoji !== undefined) {
+      const emojis = setting.emojis || (setting.emoji ? [setting.emoji] : []);
+      const remainingEmojis = emojis.filter((configuredEmoji) => configuredEmoji !== emoji);
+      if (remainingEmojis.length === emojis.length) return false;
+      if (remainingEmojis.length > 0) {
+        state.autoReactions[channelId] = {
+          channel_id: channelId,
+          emojis: remainingEmojis,
+          updated_by: setting.updated_by,
+        };
+        saveState();
+        return true;
+      }
+    }
+
     delete state.autoReactions[channelId];
     saveState();
     return true;

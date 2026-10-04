@@ -21,8 +21,10 @@ The bot registers its slash commands when it starts. Set `DISCORD_GUILD_ID` whil
 - `/sticky set message [channel]` saves and posts a sticky message. When a member sends a message in that channel, the bot moves its sticky to the bottom.
 - `/sticky view [channel]` shows the configured sticky to you.
 - `/sticky remove [channel]` removes the sticky.
-- `/autoreact set emoji [channel]` adds that emoji to each new member message in the channel.
-- `/autoreact view [channel]` shows the configured emoji.
+- `/autoreact set emoji [channel]` replaces the channel's automatic reactions with one emoji.
+- `/autoreact add emoji [channel]` adds an emoji; each channel supports up to five.
+- `/autoreact remove emoji [channel]` removes one emoji.
+- `/autoreact view [channel]` shows the configured emojis.
 - `/autoreact clear [channel]` turns automatic reactions off.
 - `/usernote add user note` adds a private staff note about a member.
 - `/usernote list user` displays that member's notes privately.

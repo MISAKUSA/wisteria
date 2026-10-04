@@ -88,9 +88,11 @@ client.on(Events.MessageCreate, (message) => {
 
   const autoReaction = database.getAutoReaction(message.channelId);
   if (autoReaction) {
-    message.react(autoReaction.emoji).catch((error) => {
-      console.error(`Could not react to message in channel ${message.channelId}:`, error);
-    });
+    for (const emoji of autoReaction.emojis) {
+      message.react(emoji).catch((error) => {
+        console.error(`Could not add ${emoji} in channel ${message.channelId}:`, error);
+      });
+    }
   }
 
   if (!database.getSticky(message.channelId)) return;
